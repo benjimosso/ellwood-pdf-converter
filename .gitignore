@@ -15,3 +15,6 @@ wheels/
 
 #Env variables.
 .env
+
+# Ignore PDF files
+*.pdf

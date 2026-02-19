@@ -3,14 +3,21 @@ from google.genai import types
 from marker.converters.pdf import PdfConverter
 from marker.models import create_model_dict
 from marker.output import text_from_rendered
+import torch
 
 def pdf_to_markdown(pdf_path):
     try:
         # You can force it to use CPU if you want to keep memory usage low
-        os.environ["TORCH_DEVICE"] = "cpu" 
+        # Select "mps" for Apple Silicon, "cuda" for NVIDIA, or "cpu" for CPU-only
+        if (torch.backends.mps.is_available()) and (torch.backends.mps.is_built()):
+            os.environ["TORCH_DEVICE"] = "mps"
+        elif torch.cuda.is_available():
+            os.environ["TORCH_DEVICE"] = "cuda"
+        else:
+            os.environ["TORCH_DEVICE"] = "cpu"
         # Or "cuda" for NVIDIA, "mps" for Apple Silicon
 
-        basedir = os.path.dirname(__file__)
+        basedir = os.path.dirname("./")
         pdf_path = os.path.join(basedir, pdf_path)
 
         # 1. Initialize Marker (This loads the AI models)
