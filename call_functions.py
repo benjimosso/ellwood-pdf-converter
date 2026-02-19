@@ -1,5 +1,5 @@
 from google.genai import types
-from functions.pdf_markd import pdf_to_markdown, schema_get_files_info
+from functions.pdf_to_markdown import pdf_to_markdown, schema_pdf_to_markdown
 
 available_functions = types.Tool(
     function_declarations=[schema_pdf_to_markdown],
