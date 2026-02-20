@@ -15,7 +15,7 @@ def pdf_to_markdown(pdf_path):
             os.environ["TORCH_DEVICE"] = "cuda"
         else:
             os.environ["TORCH_DEVICE"] = "cpu"
-        # Or "cuda" for NVIDIA, "mps" for Apple Silicon
+        
 
         basedir = os.path.dirname("./")
         pdf_path = os.path.join(basedir, pdf_path)
