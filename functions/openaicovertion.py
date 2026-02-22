@@ -4,48 +4,65 @@ from openai import OpenAI
 from pydantic import BaseModel
 from pprint import pprint
 
+class Metadata(BaseModel):
+    associated_hoa: str
+    CC_R_reference: str
+    document_name: str
+    pages: int
+    effective_date: str
+    category: str
+    tags: list[str]
+
 class GPTOutput(BaseModel):
     title: str
-    content: str
-    metadata: list[str]
+    metadata: Metadata
 
-# def convert_to_supabase_format(markdown_content: str) -> tuple[list[GPTOutput], list[float], str]:
-def convert_to_supabase_format(markdown_content: str):
-    # This is a placeholder function. You would implement your logic to parse the markdown
-    # and create GPTOutput instances based on the content.
-    # For example, you might split the markdown into sections and create an output for each section.
+
+def convert_to_supabase_format(markdown_content: str) -> tuple[list[GPTOutput], list[float], str]:
     load_dotenv()
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY environment variable not set")
     client = OpenAI(api_key=api_key)  # Initialize OpenAI client with API key
 
-    #testing a simple response: 
-    response = client.responses.create(
-        model="gpt-4o-mini",
-        input="Who won the last world cup?"
+    
+    response_embeddings = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=markdown_content,
+        encoding_format="float"
     )
-    print(response.output_text)
-    # response_embeddings = client.embeddings.create(
-    #     model="text-embedding-ada-002",
-    #     input=markdown_content,
-    #     encoding_format="float"
-    # )
-    # embeddings = response_embeddings.data[0].embedding
-    # response_json = client.responses.parse(
-    #     model="gpt-4o-mini",
-    #     input=[
-    #         {"role": "system", "content": "You are a helpful assistant that converts markdown content into a format suitable for Supabase."},
-    #         {"role": "user", "content": f"Convert the following markdown content into a JSON format with title, content, and metadata: {markdown_content}"}
-    #     ],
-    # )
+    embeddings = response_embeddings.data[0].embedding
+    response_json = client.responses.parse(
+        model="gpt-4o-mini",
+        input=[
+            {"role": "system", "content": "You are a helpful assistant that converts markdown content into a format suitable for Supabase."},
+            {"role": "user", "content": f"""Convert the following markdown content into a JSON format with title and metadata: {markdown_content}
 
-    # event = response_json.output_parsed
-    # pprint(f"Parsed GPT Output: {event}", indent=2, width=80)
-    # pprint(f"Generated Embeddings: {embeddings[:5]}...")  # Print the first 5 dimensions of the embedding for verification
-    # return ([
-    #     GPTOutput(
-    #         title=event.title,
-    #         metadata={"source": "pdf_to_markdown"}
-    #     ),
-    # ], embeddings, markdown_content)
+The title should be a concise summary of the content.
+
+The metadata should include any relevant tags or categories looking something like this:
+{{  
+    associated_hoa: "Sunrise Village",
+    CC_R_reference: "6.6.g",
+    document_name: "Sunrise_Village_Guidelines", 
+    pages: 1,
+    effective_date: "2017-06-27",
+    category: "Landscaping",
+    tags: ["encroachment", "common area", "maintenance"]
+}}
+
+Adapt the field names and values to match the content provided."""}
+        ],
+        text_format=GPTOutput
+    )
+
+    event = response_json.output_parsed
+    if not event:
+        raise ValueError("Failed to parse GPT response into the expected format.")
+    print("GPT Output Parsed Successfully!... Preparing data for Supabase insertion.")
+    return ([
+        GPTOutput(
+            title=event.title,
+            metadata=event.metadata
+        ),
+    ], embeddings, markdown_content)

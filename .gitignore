@@ -18,3 +18,7 @@ wheels/
 
 # Ignore PDF files
 *.pdf
+/pdfs/
+
+#test scripts
+testing.py
