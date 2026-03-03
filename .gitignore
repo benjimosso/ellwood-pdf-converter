@@ -22,3 +22,8 @@ wheels/
 
 #test scripts
 testing.py
+
+# Ignore output.md
+output.md
+output_*.md
+output2.md
